@@ -1,11 +1,11 @@
-# data_fetcher.py — pulls candle (OHLCV) data from Binance
+# data_fetcher.py — pulls candle (OHLCV) data from Bybit
 
 import ccxt
 import pandas as pd
 from config import CANDLE_LIMIT, TIMEFRAME
 
-# Binance public endpoints don't require an API key for market data
-exchange = ccxt.binance({
+# Bybit public endpoints don't require an API key for market data
+exchange = ccxt.bybit({
     "enableRateLimit": True,   # avoids getting temporarily blocked for too many requests
 })
 
