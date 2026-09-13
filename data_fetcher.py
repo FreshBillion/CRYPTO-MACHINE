@@ -1,11 +1,11 @@
-# data_fetcher.py — pulls candle (OHLCV) data from Bybit
+# data_fetcher.py — pulls candle (OHLCV) data from Kraken
 
 import ccxt
 import pandas as pd
 from config import CANDLE_LIMIT, TIMEFRAME
 
-# Bybit public endpoints don't require an API key for market data
-exchange = ccxt.bybit({
+# Kraken public endpoints don't require an API key for market data
+exchange = ccxt.kraken({
     "enableRateLimit": True,   # avoids getting temporarily blocked for too many requests
 })
 
