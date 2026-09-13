@@ -1,4 +1,4 @@
-# strategy.py — checks each symbol's data for a valid trade setup
+# strategy.py — scores each symbol against 4 confluence conditions and grades a tiered signal
 
 import pandas as pd
 from ta.trend import EMAIndicator, MACD
@@ -8,7 +8,8 @@ from ta.volatility import AverageTrueRange
 from config import (
     EMA_FAST, EMA_SLOW, RSI_PERIOD, RSI_OVERBOUGHT, RSI_OVERSOLD,
     MACD_FAST, MACD_SLOW, MACD_SIGNAL, VOLUME_MA_PERIOD, VOLUME_MULTIPLIER,
-    ATR_PERIOD, ATR_SL_MULTIPLIER, ATR_TP_MULTIPLIER
+    ATR_PERIOD, ATR_SL_MULTIPLIER, TP1_R, TP2_R, TP3_R,
+    LEVEL_LABELS, MIN_CONDITIONS_TO_SIGNAL
 )
 
 
@@ -29,53 +30,84 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def score_direction(last, direction: str) -> tuple:
+    """
+    Checks all 4 conditions against one direction ("bull" or "bear").
+    Returns (score, list_of_matched_condition_names).
+    """
+    matched = []
+
+    if direction == "bull":
+        if last["ema_fast"] > last["ema_slow"]:
+            matched.append("Trend")
+        if last["macd"] > last["macd_signal"]:
+            matched.append("MACD")
+        if 50 < last["rsi"] < RSI_OVERBOUGHT:
+            matched.append("RSI")
+    else:
+        if last["ema_fast"] < last["ema_slow"]:
+            matched.append("Trend")
+        if last["macd"] < last["macd_signal"]:
+            matched.append("MACD")
+        if RSI_OVERSOLD < last["rsi"] < 50:
+            matched.append("RSI")
+
+    if last["volume"] > (last["volume_ma"] * VOLUME_MULTIPLIER):
+        matched.append("Volume")
+
+    return len(matched), matched
+
+
 def check_setup(symbol: str, df: pd.DataFrame) -> dict | None:
     """
-    Looks at the most recent candle for a confluence setup:
-    trend (EMA) + momentum (RSI) + confirmation (MACD crossover) + volume spike.
-    Returns a signal dict if all conditions align, otherwise None.
+    Scores the most recent candle against both directions and returns
+    the strongest tiered signal, or None if nothing meets the minimum bar.
     """
     df = add_indicators(df)
     df.dropna(inplace=True)
-    if len(df) < 2:
+    if df.empty:
         return None
 
     last = df.iloc[-1]
-    prev = df.iloc[-2]
 
-    volume_spike = last["volume"] > (last["volume_ma"] * VOLUME_MULTIPLIER)
-    macd_bull_cross = prev["macd"] <= prev["macd_signal"] and last["macd"] > last["macd_signal"]
-    macd_bear_cross = prev["macd"] >= prev["macd_signal"] and last["macd"] < last["macd_signal"]
+    bull_score, bull_matched = score_direction(last, "bull")
+    bear_score, bear_matched = score_direction(last, "bear")
 
-    uptrend = last["ema_fast"] > last["ema_slow"]
-    downtrend = last["ema_fast"] < last["ema_slow"]
+    if bull_score == bear_score or max(bull_score, bear_score) < MIN_CONDITIONS_TO_SIGNAL:
+        return None
+
+    if bull_score > bear_score:
+        direction, score, matched = "BUY", bull_score, bull_matched
+    else:
+        direction, score, matched = "SELL", bear_score, bear_matched
 
     entry = last["close"]
     atr = last["atr"]
+    risk = atr * ATR_SL_MULTIPLIER  # this is "1R"
 
-    # BUY setup: uptrend + bullish MACD cross + RSI not overbought + volume confirms
-    if uptrend and macd_bull_cross and last["rsi"] < RSI_OVERBOUGHT and volume_spike:
-        return {
-            "symbol": symbol,
-            "signal": "BUY",
-            "entry": round(entry, 4),
-            "stop_loss": round(entry - (atr * ATR_SL_MULTIPLIER), 4),
-            "take_profit": round(entry + (atr * ATR_TP_MULTIPLIER), 4),
-            "rsi": round(last["rsi"], 1),
-        }
+    if direction == "BUY":
+        stop_loss = entry - risk
+        tp1 = entry + (risk * TP1_R)
+        tp2 = entry + (risk * TP2_R)
+        tp3 = entry + (risk * TP3_R)
+    else:
+        stop_loss = entry + risk
+        tp1 = entry - (risk * TP1_R)
+        tp2 = entry - (risk * TP2_R)
+        tp3 = entry - (risk * TP3_R)
 
-    # SELL setup: downtrend + bearish MACD cross + RSI not oversold + volume confirms
-    if downtrend and macd_bear_cross and last["rsi"] > RSI_OVERSOLD and volume_spike:
-        return {
-            "symbol": symbol,
-            "signal": "SELL",
-            "entry": round(entry, 4),
-            "stop_loss": round(entry + (atr * ATR_SL_MULTIPLIER), 4),
-            "take_profit": round(entry - (atr * ATR_TP_MULTIPLIER), 4),
-            "rsi": round(last["rsi"], 1),
-        }
-
-    return None
+    return {
+        "symbol": symbol,
+        "direction": direction,
+        "level": LEVEL_LABELS.get(score, "B"),
+        "conditions_met": matched,
+        "entry": round(entry, 4),
+        "stop_loss": round(stop_loss, 4),
+        "tp1": round(tp1, 4),
+        "tp2": round(tp2, 4),
+        "tp3": round(tp3, 4),
+        "rsi": round(last["rsi"], 1),
+    }
 
 
 def scan_all(data: dict) -> list:
