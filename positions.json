@@ -28,18 +28,17 @@
     "opened_at": "2026-09-13T18:56:42.380661"
   },
   "SOL/USDT": {
-    "status": "closed",
-    "direction": "SELL",
-    "level": "A",
-    "entry": 100.12,
-    "stop_loss": 100.8404,
-    "tp1": 99.3996,
-    "tp2": 98.6792,
-    "tp3": 97.9588,
+    "status": "open",
+    "direction": "BUY",
+    "level": "B",
+    "entry": 101.42,
+    "stop_loss": 100.7211,
+    "tp1": 102.1189,
+    "tp2": 102.8178,
+    "tp3": 103.5167,
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-13T13:54:35.242143",
-    "closed_reason": "stop_loss"
+    "opened_at": "2026-09-13T21:12:32.174904"
   }
 }
