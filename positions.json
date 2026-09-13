@@ -28,7 +28,7 @@
     "opened_at": "2026-09-13T18:56:42.380661"
   },
   "SOL/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "SELL",
     "level": "A",
     "entry": 100.12,
@@ -39,6 +39,7 @@
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-13T13:54:35.242143"
+    "opened_at": "2026-09-13T13:54:35.242143",
+    "closed_reason": "stop_loss"
   }
 }
