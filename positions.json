@@ -1,6 +1,6 @@
 {
   "BTC/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "SELL",
     "level": "A",
     "entry": 76893.8,
@@ -11,10 +11,11 @@
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-13T13:54:35.242126"
+    "opened_at": "2026-09-13T13:54:35.242126",
+    "closed_reason": "stop_loss"
   },
   "ETH/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "SELL",
     "level": "B",
     "entry": 2478.34,
@@ -25,7 +26,8 @@
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-13T13:54:35.242141"
+    "opened_at": "2026-09-13T13:54:35.242141",
+    "closed_reason": "stop_loss"
   },
   "SOL/USDT": {
     "status": "open",
