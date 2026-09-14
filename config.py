@@ -26,6 +26,11 @@ VOLUME_MULTIPLIER = 1.5
 ATR_PERIOD = 14
 ATR_SL_MULTIPLIER = 1.5   # stop-loss distance = 1.5x ATR (this defines "1R")
 
+# Stop-loss distance is ATR-based, but never allowed to shrink below this % of price
+# (prevents whipsaw stop-outs during quiet markets) or exceed this % (caps disaster moves)
+MIN_SL_PERCENT = 0.0015   # 0.15% of entry price
+MAX_SL_PERCENT = 0.015    # 1.5% of entry price
+
 # Take-profit targets, as multiples of R (R = the stop-loss distance)
 TP1_R = 1.0
 TP2_R = 2.0
