@@ -1,6 +1,6 @@
 {
   "BTC/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "BUY",
     "level": "B",
     "entry": 79012.2,
@@ -14,7 +14,8 @@
     "tp2_hit": false,
     "tp3_hit": false,
     "opened_at": "2026-09-14T20:00:28.804031",
-    "last_checked": "2026-09-14T23:02:00"
+    "last_checked": "2026-09-14T23:03:00",
+    "closed_reason": "stop_loss"
   },
   "ETH/USDT": {
     "status": "closed",
