@@ -1,7 +1,7 @@
 # telegram_sender.py — formats and sends signals + follow-up updates to Telegram
 
 import requests
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, TP1_DOLLARS, TP2_DOLLARS, TP3_DOLLARS
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, TP1_R, TP2_R, TP3_R
 
 
 def _send(message: str) -> bool:
@@ -20,14 +20,20 @@ def _send(message: str) -> bool:
 def format_signal(signal: dict) -> str:
     emoji = "🟢" if signal["direction"] == "BUY" else "🔴"
     conditions = ", ".join(signal["conditions_met"])
+    risk = signal["risk_dollars"]
+
+    tp1_dollars = round(risk * TP1_R, 2)
+    tp2_dollars = round(risk * TP2_R, 2)
+    tp3_dollars = round(risk * TP3_R, 2)
+
     return (
         f"{emoji} *{signal['level']} SETUP — {signal['direction']}* — {signal['symbol']}\n\n"
         f"Entry: `{signal['entry']}`\n"
-        f"Stop Loss: `{signal['stop_loss']}`  (risk: ${signal['risk_dollars']})\n"
+        f"Stop Loss: `{signal['stop_loss']}`  (risk: ${risk})\n"
         f"Position size: `{signal['position_size']}` BTC\n\n"
-        f"TP1: `{signal['tp1']}`  (+${TP1_DOLLARS})\n"
-        f"TP2: `{signal['tp2']}`  (+${TP2_DOLLARS})\n"
-        f"TP3: `{signal['tp3']}`  (+${TP3_DOLLARS})\n\n"
+        f"TP1: `{signal['tp1']}`  (+${tp1_dollars})\n"
+        f"TP2: `{signal['tp2']}`  (+${tp2_dollars})\n"
+        f"TP3: `{signal['tp3']}`  (+${tp3_dollars})\n\n"
         f"RSI: {signal['rsi']}\n"
         f"Conditions met: {conditions}\n\n"
         f"_Not financial advice. Trade at your own risk._"
@@ -53,10 +59,10 @@ EVENT_MESSAGES = {
     "breakeven_set": None,   # informational only, folded into the tp2_hit message
 }
 
-EVENT_DOLLAR_LABELS = {
-    "tp1_hit": TP1_DOLLARS,
-    "tp2_hit": TP2_DOLLARS,
-    "tp3_hit": TP3_DOLLARS,
+EVENT_R_MULTIPLES = {
+    "tp1_hit": TP1_R,
+    "tp2_hit": TP2_R,
+    "tp3_hit": TP3_R,
 }
 
 
@@ -65,12 +71,14 @@ def send_update(event: dict, pos: dict) -> bool:
         return True
 
     header = EVENT_MESSAGES[event["type"]]
+    risk = pos.get("risk_dollars", 0)
 
     extra = ""
-    if event["type"] in EVENT_DOLLAR_LABELS:
-        extra = f"  (+${EVENT_DOLLAR_LABELS[event['type']]})"
+    if event["type"] in EVENT_R_MULTIPLES:
+        dollars = round(risk * EVENT_R_MULTIPLES[event["type"]], 2)
+        extra = f"  (+${dollars})"
     elif event["type"] == "stop_loss":
-        extra = f"  (-${pos.get('risk_dollars', '?')})"
+        extra = f"  (-${risk})"
 
     message = (
         f"{header}{extra}\n\n"
