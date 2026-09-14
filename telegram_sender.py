@@ -1,7 +1,7 @@
 # telegram_sender.py — formats and sends signals + follow-up updates to Telegram
 
 import requests
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, TP1_DOLLARS, TP2_DOLLARS, TP3_DOLLARS
 
 
 def _send(message: str) -> bool:
@@ -23,10 +23,11 @@ def format_signal(signal: dict) -> str:
     return (
         f"{emoji} *{signal['level']} SETUP — {signal['direction']}* — {signal['symbol']}\n\n"
         f"Entry: `{signal['entry']}`\n"
-        f"Stop Loss: `{signal['stop_loss']}`\n"
-        f"TP1: `{signal['tp1']}`\n"
-        f"TP2: `{signal['tp2']}`\n"
-        f"TP3: `{signal['tp3']}`\n\n"
+        f"Stop Loss: `{signal['stop_loss']}`  (risk: ${signal['risk_dollars']})\n"
+        f"Position size: `{signal['position_size']}` BTC\n\n"
+        f"TP1: `{signal['tp1']}`  (+${TP1_DOLLARS})\n"
+        f"TP2: `{signal['tp2']}`  (+${TP2_DOLLARS})\n"
+        f"TP3: `{signal['tp3']}`  (+${TP3_DOLLARS})\n\n"
         f"RSI: {signal['rsi']}\n"
         f"Conditions met: {conditions}\n\n"
         f"_Not financial advice. Trade at your own risk._"
@@ -49,17 +50,30 @@ EVENT_MESSAGES = {
     "stop_loss": "🛑 *STOP LOSS HIT — Trade closed*",
     "breakeven": "⚪ *Stopped at breakeven — Trade closed, no loss*",
     "expired": "⌛ *Signal expired — closed with no TP or SL hit*",
-    "breakeven_set": None,   # informational only, folded into the tp2_hit message, not sent separately
+    "breakeven_set": None,   # informational only, folded into the tp2_hit message
+}
+
+EVENT_DOLLAR_LABELS = {
+    "tp1_hit": TP1_DOLLARS,
+    "tp2_hit": TP2_DOLLARS,
+    "tp3_hit": TP3_DOLLARS,
 }
 
 
 def send_update(event: dict, pos: dict) -> bool:
     if EVENT_MESSAGES.get(event["type"]) is None:
-        return True   # skip silent/internal events
+        return True
 
     header = EVENT_MESSAGES[event["type"]]
+
+    extra = ""
+    if event["type"] in EVENT_DOLLAR_LABELS:
+        extra = f"  (+${EVENT_DOLLAR_LABELS[event['type']]})"
+    elif event["type"] == "stop_loss":
+        extra = f"  (-${pos.get('risk_dollars', '?')})"
+
     message = (
-        f"{header}\n\n"
+        f"{header}{extra}\n\n"
         f"{event['symbol']} — {pos['level']} setup — {pos['direction']}\n"
         f"Entry: `{pos['entry']}`\n"
         f"Price now: `{round(event['price'], 4)}`"
