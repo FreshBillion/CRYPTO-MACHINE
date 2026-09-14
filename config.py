@@ -11,7 +11,8 @@ TIMEFRAME = "1h"
 CANDLE_LIMIT = 250
 
 # Timeframe used specifically for checking open positions
-POSITION_CHECK_TIMEFRAME = "15m"
+POSITION_CHECK_TIMEFRAME = "1m"
+POSITION_CHECK_LOOKBACK_MINUTES = 5   # always re-check a few minutes back to catch the current candle
 
 # Strategy thresholds
 EMA_FAST = 50
