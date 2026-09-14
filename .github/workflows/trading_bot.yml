@@ -1,8 +1,7 @@
 name: Crypto Signal Bot
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+
   workflow_dispatch:
 
 permissions:
