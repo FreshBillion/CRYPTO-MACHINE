@@ -4,7 +4,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHANNEL_ID = os.environ.get("TELEGRAM_CHANNEL_ID")
 
 # Markets to scan (Binance-style symbols, fetched via Kraken)
-SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+SYMBOLS = ["BTC/USDT"]
 
 # Timeframe
 TIMEFRAME = "1h"
