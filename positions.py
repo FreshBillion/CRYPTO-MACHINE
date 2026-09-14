@@ -1,4 +1,5 @@
 # positions.py — shared logic for tracking open signals and checking TP/SL hits
+# by replaying candle history since the last check, not just the current price
 
 import json
 import os
@@ -26,6 +27,7 @@ def has_open_position(positions: dict, symbol: str) -> bool:
 
 
 def open_position(positions: dict, signal: dict) -> None:
+    now = datetime.utcnow().isoformat()
     positions[signal["symbol"]] = {
         "status": "open",
         "direction": signal["direction"],
@@ -35,57 +37,69 @@ def open_position(positions: dict, signal: dict) -> None:
         "tp1": signal["tp1"],
         "tp2": signal["tp2"],
         "tp3": signal["tp3"],
+        "position_size": signal["position_size"],
+        "risk_dollars": signal["risk_dollars"],
         "tp1_hit": False,
         "tp2_hit": False,
         "tp3_hit": False,
-        "opened_at": datetime.utcnow().isoformat(),
+        "opened_at": now,
+        "last_checked": now,
     }
 
 
-def check_position(symbol: str, pos: dict, current_price: float) -> list:
+def check_position(symbol: str, pos: dict, candles) -> list:
     """
-    Compares current_price against a position's levels.
-    Returns a list of event dicts for anything that just happened
-    (tp1_hit, tp2_hit, tp3_hit, stop_loss, breakeven, expired).
-    Mutates pos in place.
+    Replays every candle since the last check (oldest first), testing each one's
+    high/low against the position's levels. This catches a TP or SL touch even
+    if the check itself runs late and the price has since moved away again.
+    Mutates pos in place. Returns a list of event dicts for anything that happened.
     """
     events = []
     is_buy = pos["direction"] == "BUY"
 
-    def hit(target):
-        return current_price >= target if is_buy else current_price <= target
+    for ts, candle in candles.iterrows():
+        high, low = candle["high"], candle["low"]
 
-    def stopped():
-        return current_price <= pos["stop_loss"] if is_buy else current_price >= pos["stop_loss"]
+        stopped = (low <= pos["stop_loss"]) if is_buy else (high >= pos["stop_loss"])
+        if stopped:
+            pos["status"] = "closed"
+            pos["closed_reason"] = "breakeven" if pos.get("tp2_hit") else "stop_loss"
+            events.append({"type": pos["closed_reason"], "symbol": symbol, "price": pos["stop_loss"]})
+            pos["last_checked"] = ts.isoformat()
+            return events
 
-    if stopped():
-        pos["status"] = "closed"
-        pos["closed_reason"] = "breakeven" if pos.get("tp2_hit") else "stop_loss"
-        events.append({"type": pos["closed_reason"], "symbol": symbol, "price": current_price})
-        return events
+        if not pos["tp1_hit"]:
+            touched = (high >= pos["tp1"]) if is_buy else (low <= pos["tp1"])
+            if touched:
+                pos["tp1_hit"] = True
+                events.append({"type": "tp1_hit", "symbol": symbol, "price": pos["tp1"]})
 
-    if not pos["tp1_hit"] and hit(pos["tp1"]):
-        pos["tp1_hit"] = True
-        events.append({"type": "tp1_hit", "symbol": symbol, "price": current_price})
+        if not pos["tp2_hit"]:
+            touched = (high >= pos["tp2"]) if is_buy else (low <= pos["tp2"])
+            if touched:
+                pos["tp2_hit"] = True
+                events.append({"type": "tp2_hit", "symbol": symbol, "price": pos["tp2"]})
+                if MOVE_SL_TO_BREAKEVEN_AFTER_TP2:
+                    pos["stop_loss"] = pos["entry"]
+                    events.append({"type": "breakeven_set", "symbol": symbol, "price": pos["entry"]})
 
-    if not pos["tp2_hit"] and hit(pos["tp2"]):
-        pos["tp2_hit"] = True
-        events.append({"type": "tp2_hit", "symbol": symbol, "price": current_price})
-        if MOVE_SL_TO_BREAKEVEN_AFTER_TP2:
-            pos["stop_loss"] = pos["entry"]
-            events.append({"type": "breakeven_set", "symbol": symbol, "price": pos["entry"]})
+        if not pos["tp3_hit"]:
+            touched = (high >= pos["tp3"]) if is_buy else (low <= pos["tp3"])
+            if touched:
+                pos["tp3_hit"] = True
+                pos["status"] = "closed"
+                pos["closed_reason"] = "tp3_hit"
+                events.append({"type": "tp3_hit", "symbol": symbol, "price": pos["tp3"]})
+                pos["last_checked"] = ts.isoformat()
+                return events
 
-    if not pos["tp3_hit"] and hit(pos["tp3"]):
-        pos["tp3_hit"] = True
-        pos["status"] = "closed"
-        pos["closed_reason"] = "tp3_hit"
-        events.append({"type": "tp3_hit", "symbol": symbol, "price": current_price})
-        return events
+        pos["last_checked"] = ts.isoformat()
 
     opened_at = datetime.fromisoformat(pos["opened_at"])
     if datetime.utcnow() - opened_at > timedelta(hours=POSITION_EXPIRY_HOURS):
+        last_price = candles.iloc[-1]["close"] if not candles.empty else pos["entry"]
         pos["status"] = "closed"
         pos["closed_reason"] = "expired"
-        events.append({"type": "expired", "symbol": symbol, "price": current_price})
+        events.append({"type": "expired", "symbol": symbol, "price": last_price})
 
     return events
