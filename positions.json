@@ -8,7 +8,7 @@
     "tp1": 76554.0855,
     "tp2": 76223.671,
     "tp3": 75893.2564,
-    "tp1_hit": false,
+    "tp1_hit": true,
     "tp2_hit": false,
     "tp3_hit": false,
     "opened_at": "2026-09-14T00:21:47.180370"
