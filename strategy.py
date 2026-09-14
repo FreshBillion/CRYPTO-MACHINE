@@ -1,5 +1,5 @@
 # strategy.py — scores each symbol against 4 confluence conditions, grades a tiered signal,
-# and sizes the position so the ATR-based stop equals a fixed dollar risk
+# and sizes the position so the volatility-based stop equals a fixed dollar risk
 
 import pandas as pd
 from ta.trend import EMAIndicator, MACD
@@ -10,7 +10,7 @@ from config import (
     EMA_FAST, EMA_SLOW, RSI_PERIOD, RSI_OVERBOUGHT, RSI_OVERSOLD,
     MACD_FAST, MACD_SLOW, MACD_SIGNAL, VOLUME_MA_PERIOD, VOLUME_MULTIPLIER,
     ATR_PERIOD, ATR_SL_MULTIPLIER, MIN_SL_PERCENT, MAX_SL_PERCENT,
-    RISK_DOLLARS_BY_LEVEL, TP1_DOLLARS, TP2_DOLLARS, TP3_DOLLARS,
+    TP1_R, TP2_R, TP3_R, RISK_DOLLARS_BY_LEVEL,
     LEVEL_LABELS, MIN_CONDITIONS_TO_SIGNAL
 )
 
@@ -79,8 +79,7 @@ def check_setup(symbol: str, df: pd.DataFrame) -> dict | None:
     entry = last["close"]
     atr = last["atr"]
 
-    # Stop-loss distance: ATR-based, floored and capped as a % of price so it
-    # can't collapse to noise-level in quiet markets or blow out in wild ones
+    # Stop-loss distance: ATR-based, floored/capped as a % of price
     atr_distance = atr * ATR_SL_MULTIPLIER
     min_distance = entry * MIN_SL_PERCENT
     max_distance = entry * MAX_SL_PERCENT
@@ -90,9 +89,10 @@ def check_setup(symbol: str, df: pd.DataFrame) -> dict | None:
     risk_dollars = RISK_DOLLARS_BY_LEVEL.get(level, 5)
     position_size = round(risk_dollars / stop_distance, 6)
 
-    tp1_distance = TP1_DOLLARS / position_size
-    tp2_distance = TP2_DOLLARS / position_size
-    tp3_distance = TP3_DOLLARS / position_size
+    # TPs are R-multiples of the same stop distance — they scale with volatility too
+    tp1_distance = stop_distance * TP1_R
+    tp2_distance = stop_distance * TP2_R
+    tp3_distance = stop_distance * TP3_R
 
     if direction == "BUY":
         stop_loss = entry - stop_distance
