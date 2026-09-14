@@ -1,4 +1,5 @@
-# strategy.py — scores each symbol against 4 confluence conditions and grades a tiered signal
+# strategy.py — scores each symbol against 4 confluence conditions, grades a tiered signal,
+# and sizes the position so the ATR-based stop equals a fixed dollar risk
 
 import pandas as pd
 from ta.trend import EMAIndicator, MACD
@@ -8,7 +9,8 @@ from ta.volatility import AverageTrueRange
 from config import (
     EMA_FAST, EMA_SLOW, RSI_PERIOD, RSI_OVERBOUGHT, RSI_OVERSOLD,
     MACD_FAST, MACD_SLOW, MACD_SIGNAL, VOLUME_MA_PERIOD, VOLUME_MULTIPLIER,
-    ATR_PERIOD, ATR_SL_MULTIPLIER, TP1_R, TP2_R, TP3_R,
+    ATR_PERIOD, ATR_SL_MULTIPLIER, MIN_SL_PERCENT, MAX_SL_PERCENT,
+    RISK_DOLLARS_BY_LEVEL, TP1_DOLLARS, TP2_DOLLARS, TP3_DOLLARS,
     LEVEL_LABELS, MIN_CONDITIONS_TO_SIGNAL
 )
 
@@ -31,10 +33,6 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def score_direction(last, direction: str) -> tuple:
-    """
-    Checks all 4 conditions against one direction ("bull" or "bear").
-    Returns (score, list_of_matched_condition_names).
-    """
     matched = []
 
     if direction == "bull":
@@ -59,10 +57,6 @@ def score_direction(last, direction: str) -> tuple:
 
 
 def check_setup(symbol: str, df: pd.DataFrame) -> dict | None:
-    """
-    Scores the most recent candle against both directions and returns
-    the strongest tiered signal, or None if nothing meets the minimum bar.
-    """
     df = add_indicators(df)
     df.dropna(inplace=True)
     if df.empty:
@@ -81,40 +75,53 @@ def check_setup(symbol: str, df: pd.DataFrame) -> dict | None:
     else:
         direction, score, matched = "SELL", bear_score, bear_matched
 
+    level = LEVEL_LABELS.get(score, "B")
     entry = last["close"]
     atr = last["atr"]
-    risk = atr * ATR_SL_MULTIPLIER  # this is "1R"
+
+    # Stop-loss distance: ATR-based, floored and capped as a % of price so it
+    # can't collapse to noise-level in quiet markets or blow out in wild ones
+    atr_distance = atr * ATR_SL_MULTIPLIER
+    min_distance = entry * MIN_SL_PERCENT
+    max_distance = entry * MAX_SL_PERCENT
+    stop_distance = max(min_distance, min(atr_distance, max_distance))
+
+    # Position size: sized so risking this stop distance equals the target dollar risk
+    risk_dollars = RISK_DOLLARS_BY_LEVEL.get(level, 5)
+    position_size = round(risk_dollars / stop_distance, 6)
+
+    tp1_distance = TP1_DOLLARS / position_size
+    tp2_distance = TP2_DOLLARS / position_size
+    tp3_distance = TP3_DOLLARS / position_size
 
     if direction == "BUY":
-        stop_loss = entry - risk
-        tp1 = entry + (risk * TP1_R)
-        tp2 = entry + (risk * TP2_R)
-        tp3 = entry + (risk * TP3_R)
+        stop_loss = entry - stop_distance
+        tp1 = entry + tp1_distance
+        tp2 = entry + tp2_distance
+        tp3 = entry + tp3_distance
     else:
-        stop_loss = entry + risk
-        tp1 = entry - (risk * TP1_R)
-        tp2 = entry - (risk * TP2_R)
-        tp3 = entry - (risk * TP3_R)
+        stop_loss = entry + stop_distance
+        tp1 = entry - tp1_distance
+        tp2 = entry - tp2_distance
+        tp3 = entry - tp3_distance
 
     return {
         "symbol": symbol,
         "direction": direction,
-        "level": LEVEL_LABELS.get(score, "B"),
+        "level": level,
         "conditions_met": matched,
         "entry": round(entry, 4),
         "stop_loss": round(stop_loss, 4),
         "tp1": round(tp1, 4),
         "tp2": round(tp2, 4),
         "tp3": round(tp3, 4),
+        "position_size": position_size,
+        "risk_dollars": risk_dollars,
         "rsi": round(last["rsi"], 1),
     }
 
 
 def scan_all(data: dict) -> list:
-    """
-    Runs check_setup on every symbol's DataFrame.
-    Returns a list of signal dicts (empty if nothing found this scan).
-    """
     signals = []
     for symbol, df in data.items():
         result = check_setup(symbol, df)
