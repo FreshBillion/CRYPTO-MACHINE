@@ -1,11 +1,11 @@
 # check_positions.py — checks open positions by replaying candle history since the last check
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from data_fetcher import fetch_since
 from positions import load_positions, save_positions, check_position
 from telegram_sender import send_update
-from config import POSITION_CHECK_TIMEFRAME
+from config import POSITION_CHECK_TIMEFRAME, POSITION_CHECK_LOOKBACK_MINUTES
 
 
 def run():
@@ -18,8 +18,12 @@ def run():
 
     for symbol in open_symbols:
         pos = positions[symbol]
-        last_checked = pos.get("last_checked", pos["opened_at"])
-        since_ms = int(datetime.fromisoformat(last_checked).timestamp() * 1000) + 1
+
+        last_checked_ms = int(datetime.fromisoformat(pos.get("last_checked", pos["opened_at"])).timestamp() * 1000)
+        opened_at_ms = int(datetime.fromisoformat(pos["opened_at"]).timestamp() * 1000)
+        lookback_ms = POSITION_CHECK_LOOKBACK_MINUTES * 60 * 1000
+
+        since_ms = max(opened_at_ms, last_checked_ms - lookback_ms)
 
         candles = fetch_since(symbol, since_ms, timeframe=POSITION_CHECK_TIMEFRAME)
         if candles.empty:
