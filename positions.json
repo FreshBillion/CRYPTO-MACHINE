@@ -16,7 +16,7 @@
     "closed_reason": "stop_loss"
   },
   "ETH/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "SELL",
     "level": "B",
     "entry": 2484.3,
@@ -28,7 +28,8 @@
     "tp2_hit": false,
     "tp3_hit": false,
     "opened_at": "2026-09-14T00:21:47.180388",
-    "last_checked": "2026-09-14T02:15:00"
+    "last_checked": "2026-09-14T02:30:00",
+    "closed_reason": "stop_loss"
   },
   "SOL/USDT": {
     "status": "closed",
