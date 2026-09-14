@@ -11,7 +11,8 @@
     "tp1_hit": true,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-14T00:21:47.180370"
+    "opened_at": "2026-09-14T00:21:47.180370",
+    "last_checked": "2026-09-14T01:15:00"
   },
   "ETH/USDT": {
     "status": "open",
@@ -25,7 +26,8 @@
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-14T00:21:47.180388"
+    "opened_at": "2026-09-14T00:21:47.180388",
+    "last_checked": "2026-09-14T01:15:00"
   },
   "SOL/USDT": {
     "status": "open",
@@ -39,6 +41,7 @@
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-14T00:21:47.180391"
+    "opened_at": "2026-09-14T00:21:47.180391",
+    "last_checked": "2026-09-14T01:15:00"
   }
 }
