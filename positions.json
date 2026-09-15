@@ -4,17 +4,17 @@
     "direction": "SELL",
     "level": "A",
     "entry": 76826.2,
-    "stop_loss": 77349.4541,
+    "stop_loss": 76826.2,
     "tp1": 76302.9459,
     "tp2": 75779.6918,
     "tp3": 75256.4378,
     "position_size": 0.011467,
     "risk_dollars": 6,
     "tp1_hit": true,
-    "tp2_hit": false,
+    "tp2_hit": true,
     "tp3_hit": false,
     "opened_at": "2026-09-15T08:15:31.899289",
-    "last_checked": "2026-09-15T14:39:00"
+    "last_checked": "2026-09-15T14:40:00"
   },
   "ETH/USDT": {
     "status": "closed",
