@@ -1,21 +1,20 @@
 {
   "BTC/USDT": {
-    "status": "closed",
+    "status": "open",
     "direction": "SELL",
     "level": "A",
-    "entry": 76826.2,
-    "stop_loss": 76826.2,
-    "tp1": 76302.9459,
-    "tp2": 75779.6918,
-    "tp3": 75256.4378,
-    "position_size": 0.011467,
+    "entry": 76781.3,
+    "stop_loss": 77513.2807,
+    "tp1": 76049.3193,
+    "tp2": 75317.3385,
+    "tp3": 74585.3578,
+    "position_size": 0.008197,
     "risk_dollars": 6,
-    "tp1_hit": true,
-    "tp2_hit": true,
+    "tp1_hit": false,
+    "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-09-15T08:15:31.899289",
-    "last_checked": "2026-09-15T17:33:00",
-    "closed_reason": "breakeven"
+    "opened_at": "2026-09-15T17:45:25.067452",
+    "last_checked": "2026-09-15T17:45:25.067452"
   },
   "ETH/USDT": {
     "status": "closed",
