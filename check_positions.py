@@ -1,4 +1,6 @@
-# check_positions.py — checks open positions by replaying candle history since the last check
+# check_positions.py — checks open positions by replaying candle history since the last check.
+# Only uses fully-closed candles — a still-forming candle's high/low can be a fleeting
+# artifact of one in-progress trade rather than a real, settled price move.
 
 from datetime import datetime, timedelta
 
@@ -6,6 +8,26 @@ from data_fetcher import fetch_since
 from positions import load_positions, save_positions, check_position
 from telegram_sender import send_update
 from config import POSITION_CHECK_TIMEFRAME, POSITION_CHECK_LOOKBACK_MINUTES
+
+
+def _timeframe_to_timedelta(tf: str) -> timedelta:
+    unit = tf[-1]
+    value = int(tf[:-1])
+    if unit == "h":
+        return timedelta(hours=value)
+    if unit == "d":
+        return timedelta(days=value)
+    return timedelta(minutes=value)
+
+
+def _drop_forming_candle(candles, timeframe: str):
+    if candles.empty:
+        return candles
+    duration = _timeframe_to_timedelta(timeframe)
+    last_candle_end = candles.index[-1] + duration
+    if datetime.utcnow() >= last_candle_end:
+        return candles
+    return candles.iloc[:-1]
 
 
 def run():
@@ -26,8 +48,10 @@ def run():
         since_ms = max(opened_at_ms, last_checked_ms - lookback_ms)
 
         candles = fetch_since(symbol, since_ms, timeframe=POSITION_CHECK_TIMEFRAME)
+        candles = _drop_forming_candle(candles, POSITION_CHECK_TIMEFRAME)
+
         if candles.empty:
-            print(f"{symbol}: no new candles since last check.")
+            print(f"{symbol}: no new closed candles since last check.")
             continue
 
         events = check_position(symbol, pos, candles)
