@@ -1,27 +1,22 @@
-# telegram_sender.py — formats and sends signals + follow-up updates to Telegram
-
 import requests
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, TP1_R, TP2_R, TP3_R
+from config import (
+    TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, TELEGRAM_PERSONAL_CHAT_ID,
+    TP1_R, TP2_R, TP3_R
+)
 
 
-def _send(message: str) -> bool:
+def _send(message: str, chat_id: str) -> bool:
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHANNEL_ID,
-        "text": message,
-        "parse_mode": "Markdown",
-    }
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
     response = requests.post(url, json=payload)
     if response.status_code != 200:
-        print(f"Telegram send failed: {response.text}")
+        print(f"Telegram send failed ({chat_id}): {response.text}")
     return response.status_code == 200
 
 
-def format_signal(signal: dict) -> str:
+def format_signal_public(signal: dict) -> str:
     emoji = "🟢" if signal["direction"] == "BUY" else "🔴"
-    conditions = ", ".join(signal["conditions_met"])
     risk = signal["risk_dollars"]
-
     tp1_dollars = round(risk * TP1_R, 2)
     tp2_dollars = round(risk * TP2_R, 2)
     tp3_dollars = round(risk * TP3_R, 2)
@@ -30,18 +25,25 @@ def format_signal(signal: dict) -> str:
         f"{emoji} *{signal['level']} SETUP — {signal['direction']}* — {signal['symbol']}\n\n"
         f"Entry: `{signal['entry']}`\n"
         f"Stop Loss: `{signal['stop_loss']}`  (risk: ${risk})\n"
-        f"Position size: `{signal['position_size']}` BTC\n\n"
+        f"Position size: `{signal['position_size']}` {signal['symbol'].split('/')[0]}\n\n"
         f"TP1: `{signal['tp1']}`  (+${tp1_dollars})\n"
         f"TP2: `{signal['tp2']}`  (+${tp2_dollars})\n"
         f"TP3: `{signal['tp3']}`  (+${tp3_dollars})\n\n"
-        f"RSI: {signal['rsi']}\n"
-        f"Conditions met: {conditions}\n\n"
+        f"RSI: {signal['rsi']}\n\n"
         f"_Not financial advice. Trade at your own risk._"
     )
 
 
+def format_signal_private(signal: dict) -> str:
+    conditions = ", ".join(signal["conditions_met"])
+    return format_signal_public(signal) + f"\n\nConditions met: {conditions}"
+
+
 def send_signal(signal: dict) -> bool:
-    return _send(format_signal(signal))
+    public_ok = _send(format_signal_public(signal), TELEGRAM_CHANNEL_ID)
+    if TELEGRAM_PERSONAL_CHAT_ID:
+        _send(format_signal_private(signal), TELEGRAM_PERSONAL_CHAT_ID)
+    return public_ok
 
 
 def send_all(signals: list) -> None:
@@ -56,14 +58,10 @@ EVENT_MESSAGES = {
     "stop_loss": "🛑 *STOP LOSS HIT — Trade closed*",
     "breakeven": "⚪ *Stopped at breakeven — Trade closed, no loss*",
     "expired": "⌛ *Signal expired — closed with no TP or SL hit*",
-    "breakeven_set": None,   # informational only, folded into the tp2_hit message
+    "breakeven_set": None,
 }
 
-EVENT_R_MULTIPLES = {
-    "tp1_hit": TP1_R,
-    "tp2_hit": TP2_R,
-    "tp3_hit": TP3_R,
-}
+EVENT_R_MULTIPLES = {"tp1_hit": TP1_R, "tp2_hit": TP2_R, "tp3_hit": TP3_R}
 
 
 def send_update(event: dict, pos: dict) -> bool:
@@ -86,4 +84,4 @@ def send_update(event: dict, pos: dict) -> bool:
         f"Entry: `{pos['entry']}`\n"
         f"Price now: `{round(event['price'], 4)}`"
     )
-    return _send(message)
+    return _send(message, TELEGRAM_CHANNEL_ID)
