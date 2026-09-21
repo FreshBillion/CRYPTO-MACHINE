@@ -10,11 +10,11 @@
     "tp3": 85809.4703,
     "position_size": 0.007454,
     "risk_dollars": 6,
-    "tp1_hit": false,
+    "tp1_hit": true,
     "tp2_hit": false,
     "tp3_hit": false,
     "opened_at": "2026-09-21T08:45:30.146846",
-    "last_checked": "2026-09-21T09:25:00"
+    "last_checked": "2026-09-21T09:27:00"
   },
   "ETH/USDT": {
     "status": "closed",
