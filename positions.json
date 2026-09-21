@@ -4,17 +4,17 @@
     "direction": "BUY",
     "level": "B",
     "entry": 80771.9,
-    "stop_loss": 80313.1312,
+    "stop_loss": 80771.9,
     "tp1": 81230.6688,
     "tp2": 81689.4376,
     "tp3": 82148.2063,
     "position_size": 0.010899,
     "risk_dollars": 5,
     "tp1_hit": true,
-    "tp2_hit": false,
+    "tp2_hit": true,
     "tp3_hit": false,
     "opened_at": "2026-09-20T21:15:26.909043",
-    "last_checked": "2026-09-21T00:11:00"
+    "last_checked": "2026-09-21T00:13:00"
   },
   "ETH/USDT": {
     "status": "closed",
