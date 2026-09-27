@@ -85,3 +85,20 @@ def send_update(event: dict, pos: dict) -> bool:
         f"Price now: `{round(event['price'], 4)}`"
     )
     return _send(message, TELEGRAM_CHANNEL_ID)
+
+def format_engulf_signal(signal: dict) -> str:
+    emoji = "🟢" if signal["direction"] == "BUY" else "🔴"
+    return (
+        f"{emoji} *{signal['strategy_name']} SETUP — {signal['direction']}* — {signal['market_symbol']}\n\n"
+        f"Entry: `{signal['entry']}`\n"
+        f"Stop Loss: `{signal['stop_loss']}`\n\n"
+        f"TP1: `{signal['tp1']}`\n"
+        f"TP2: `{signal['tp2']}`\n"
+        f"TP3: `{signal['tp3']}`\n\n"
+        f"_Not financial advice. Trade at your own risk._"
+    )
+
+
+def send_engulf_signal(signal: dict) -> bool:
+    # Channel only — no personal DM copy for Nova, per instruction
+    return _send(format_engulf_signal(signal), TELEGRAM_CHANNEL_ID)
