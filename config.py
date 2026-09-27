@@ -45,4 +45,17 @@ MIN_CONDITIONS_TO_SIGNAL = 2
 
 MOVE_SL_TO_BREAKEVEN_AFTER_TP2 = True
 
+# Codenames tagging which strategy sent a signal, without revealing the mechanism
+STRATEGY_NAME_PRIMARY = "Orion"   # the existing tiered indicator strategy
+STRATEGY_NAME_ENGULF = "Nova"     # the new prominence-engulfing strategy
+
+# Nova (engulfing) parameters — backtested at prominence 1000
+ENGULF_PROMINENCE_THRESHOLD = 1000
+ENGULF_MIN_ENGULF_RATIO = 1.0
+ENGULF_LOT_SIZE = 0.01
+ENGULF_SL_DOLLARS = 5
+ENGULF_TP1_DOLLARS = 5
+ENGULF_TP2_DOLLARS = 10
+ENGULF_TP3_DOLLARS = 15
+
 POSITION_EXPIRY_HOURS = 48
