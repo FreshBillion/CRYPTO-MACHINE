@@ -30,6 +30,7 @@ def open_position(positions: dict, signal: dict) -> None:
     now = datetime.utcnow().isoformat()
     positions[signal["symbol"]] = {
         "status": "open",
+        "market_symbol": signal.get("market_symbol", signal["symbol"]),
         "direction": signal["direction"],
         "level": signal["level"],
         "entry": signal["entry"],
