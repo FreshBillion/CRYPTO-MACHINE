@@ -1,8 +1,8 @@
 # check_positions.py — checks open positions by replaying candle history since the last
-# confirmed checkpoint (strictly forward only — no backward lookback, which was
-# causing old candles to be re-checked against a stop level that didn't exist yet).
-# Only uses fully-closed candles — a still-forming candle's high/low can be a fleeting
-# artifact of one in-progress trade rather than a real, settled price move.
+# confirmed checkpoint (strictly forward only). Uses each position's stored
+# market_symbol (the real exchange pair) for fetching prices — the dict key itself
+# may be a strategy-specific tracking key (e.g. Nova's "BTC/USDT-NOVA"), which isn't
+# a real tradeable symbol on its own.
 
 from datetime import datetime, timedelta
 
@@ -42,11 +42,12 @@ def run():
 
     for symbol in open_symbols:
         pos = positions[symbol]
+        market_symbol = pos.get("market_symbol", symbol)
 
         last_checked_ms = int(datetime.fromisoformat(pos.get("last_checked", pos["opened_at"])).timestamp() * 1000)
-        since_ms = last_checked_ms + 1   # strictly forward — never re-check already-processed candles
+        since_ms = last_checked_ms + 1
 
-        candles = fetch_since(symbol, since_ms, timeframe=POSITION_CHECK_TIMEFRAME)
+        candles = fetch_since(market_symbol, since_ms, timeframe=POSITION_CHECK_TIMEFRAME)
         candles = _drop_forming_candle(candles, POSITION_CHECK_TIMEFRAME)
 
         if candles.empty:
