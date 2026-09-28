@@ -22,7 +22,7 @@ def format_signal_public(signal: dict) -> str:
     tp3_dollars = round(risk * TP3_R, 2)
 
     return (
-        f"{emoji} *{signal['level']} SETUP — {signal['direction']}* — {signal['symbol']}\n\n"
+        f"{emoji} *ORION — {signal['level']} SETUP — {signal['direction']}* — {signal['symbol']}\n\n"
         f"Entry: `{signal['entry']}`\n"
         f"Stop Loss: `{signal['stop_loss']}`  (risk: ${risk})\n"
         f"Position size: `{signal['position_size']}` {signal['symbol'].split('/')[0]}\n\n"
@@ -78,13 +78,17 @@ def send_update(event: dict, pos: dict) -> bool:
     elif event["type"] == "stop_loss":
         extra = f"  (-${risk})"
 
+    strategy_tag = pos.get("strategy_name") or "ORION"
+    level_tag = f" — {pos['level']}" if "level" in pos else ""
+
     message = (
         f"{header}{extra}\n\n"
-        f"{event['symbol']} — {pos['level']} setup — {pos['direction']}\n"
+        f"{strategy_tag}{level_tag} setup — {event['symbol']} — {pos['direction']}\n"
         f"Entry: `{pos['entry']}`\n"
         f"Price now: `{round(event['price'], 4)}`"
     )
     return _send(message, TELEGRAM_CHANNEL_ID)
+
 
 def format_engulf_signal(signal: dict) -> str:
     emoji = "🟢" if signal["direction"] == "BUY" else "🔴"
@@ -100,5 +104,4 @@ def format_engulf_signal(signal: dict) -> str:
 
 
 def send_engulf_signal(signal: dict) -> bool:
-    # Channel only — no personal DM copy for Nova, per instruction
     return _send(format_engulf_signal(signal), TELEGRAM_CHANNEL_ID)
