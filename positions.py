@@ -1,6 +1,3 @@
-# positions.py — shared logic for tracking open signals and checking TP/SL hits
-# by replaying candle history since the last check, not just the current price
-
 import json
 import os
 from datetime import datetime, timedelta
@@ -28,33 +25,35 @@ def has_open_position(positions: dict, symbol: str) -> bool:
 
 def open_position(positions: dict, signal: dict) -> None:
     now = datetime.utcnow().isoformat()
-    positions[signal["symbol"]] = {
+    pos = {
         "status": "open",
-        "market_symbol": signal.get("market_symbol", signal["symbol"]),
         "direction": signal["direction"],
-        "level": signal["level"],
         "entry": signal["entry"],
         "stop_loss": signal["stop_loss"],
         "tp1": signal["tp1"],
         "tp2": signal["tp2"],
         "tp3": signal["tp3"],
-        "position_size": signal["position_size"],
-        "risk_dollars": signal["risk_dollars"],
+        "market_symbol": signal.get("market_symbol", signal["symbol"]),
+        "strategy_name": signal.get("strategy_name", "ORION"),
         "tp1_hit": False,
         "tp2_hit": False,
         "tp3_hit": False,
         "opened_at": now,
         "last_checked": now,
+        "last_signal_candle": signal.get("candle_time"),
     }
+    # Orion-only fields — safely omitted for Nova, which doesn't have them
+    if "level" in signal:
+        pos["level"] = signal["level"]
+    if "position_size" in signal:
+        pos["position_size"] = signal["position_size"]
+    if "risk_dollars" in signal:
+        pos["risk_dollars"] = signal["risk_dollars"]
+
+    positions[signal["symbol"]] = pos
 
 
 def check_position(symbol: str, pos: dict, candles) -> list:
-    """
-    Replays every candle since the last check (oldest first), testing each one's
-    high/low against the position's levels. This catches a TP or SL touch even
-    if the check itself runs late and the price has since moved away again.
-    Mutates pos in place. Returns a list of event dicts for anything that happened.
-    """
     events = []
     is_buy = pos["direction"] == "BUY"
 
