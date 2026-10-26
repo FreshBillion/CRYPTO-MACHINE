@@ -1,6 +1,6 @@
 {
   "BTC/USDT": {
-    "status": "open",
+    "status": "closed",
     "direction": "BUY",
     "entry": 80528.2,
     "stop_loss": 80002.19,
@@ -13,10 +13,11 @@
     "tp2_hit": false,
     "tp3_hit": false,
     "opened_at": "2026-10-26T10:00:42.205456",
-    "last_checked": "2026-10-26T13:23:00",
+    "last_checked": "2026-10-26T13:25:00",
     "last_signal_candle": null,
     "level": "B",
     "position_size": 0.009506,
-    "risk_dollars": 5
+    "risk_dollars": 5,
+    "closed_reason": "stop_loss"
   }
 }
