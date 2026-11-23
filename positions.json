@@ -1,23 +1,22 @@
 {
   "BTC/USDT": {
-    "status": "closed",
+    "status": "open",
     "direction": "BUY",
-    "entry": 63062.3,
-    "stop_loss": 62116.3655,
-    "tp1": 64008.2345,
-    "tp2": 64954.169,
-    "tp3": 65900.1035,
+    "entry": 62111.9,
+    "stop_loss": 61180.2215,
+    "tp1": 63043.5785,
+    "tp2": 63975.257,
+    "tp3": 64906.9355,
     "market_symbol": "BTC/USDT",
     "strategy_name": "ORION",
     "tp1_hit": false,
     "tp2_hit": false,
     "tp3_hit": false,
-    "opened_at": "2026-11-23T15:00:42.781505",
-    "last_checked": "2026-11-23T16:41:00",
+    "opened_at": "2026-11-23T16:45:37.021634",
+    "last_checked": "2026-11-23T16:45:37.021634",
     "last_signal_candle": null,
     "level": "B",
-    "position_size": 0.005286,
-    "risk_dollars": 5,
-    "closed_reason": "stop_loss"
+    "position_size": 0.005367,
+    "risk_dollars": 5
   }
 }
